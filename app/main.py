@@ -1,5 +1,5 @@
 import sys
-
+import re
 
 def main():
 
@@ -10,6 +10,13 @@ def main():
 
         # Read for user input
         user_input = input()
+
+        # Check for exit command
+        pattern = r"^exit\s+(\d{1})"
+        match = re.search(pattern, user_input)
+        if match:
+            exit_code = match.group(1)
+            sys.exit(exit_code)
 
         # Format an output
         output = f"{user_input}: command not found"
