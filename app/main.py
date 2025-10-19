@@ -15,7 +15,7 @@ def main():
         pattern = r"^exit\s+(\d{1})"
         match = re.search(pattern, user_input)
         if match:
-            exit_code = match.group(1)
+            exit_code = int(match.group(1))
             sys.exit(exit_code)
 
         # Format an output
