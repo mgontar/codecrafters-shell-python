@@ -2,14 +2,17 @@ import sys
 
 
 def main():
-    # Print prompt
+    # Print a prompt
     sys.stdout.write("$ ")
 
     # Read for user input
     user_input = input()
 
-    # Print output
-    print(f"{user_input}: command not found")
+    # Format an output
+    output = f"{user_input}: command not found"
+
+    # Print an output
+    print(output)
 
 
 if __name__ == "__main__":
