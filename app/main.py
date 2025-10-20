@@ -1,11 +1,9 @@
 import subprocess
 import sys
-import re
 import os
 from pathlib import Path
 
-builtin_commands_list = ["exit", "echo", "type"]
-
+builtin_commands_dict = {}
 
 def get_executables(name):
     executables_list = []
@@ -36,7 +34,7 @@ def command_echo(arg_string):
 
 
 def command_type(arg_string):
-    if arg_string in builtin_commands_list:
+    if arg_string in builtin_commands_dict:
         output = f"{arg_string} is a shell builtin"
         print(output)
     else:
@@ -48,6 +46,15 @@ def command_type(arg_string):
             output = f"{arg_string}: not found"
             print(output)
 
+def command_pwd(user_input):
+    current_directory = os.getcwd()
+    print(current_directory)
+
+
+builtin_commands_dict = {"exit": command_exit,
+                             "echo": command_echo,
+                             "type": command_type,
+                             "pwd": command_pwd}
 
 def execute(user_input):
     arg_list = user_input.split()
@@ -61,7 +68,7 @@ def execute(user_input):
 
 
 def main():
-    builtin_commands_dict = {"exit": command_exit, "echo": command_echo, "type": command_type}
+
 
     # Never ending REPL loop
     while True:
