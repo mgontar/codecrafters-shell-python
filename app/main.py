@@ -5,6 +5,7 @@ from pathlib import Path
 
 builtin_commands_dict = {}
 
+
 def get_executables(name):
     executables_list = []
 
@@ -46,11 +47,16 @@ def command_type(arg_string):
             output = f"{arg_string}: not found"
             print(output)
 
+
 def command_pwd(user_input):
     current_directory = os.getcwd()
     print(current_directory)
 
-def command_cd(new_directory):
+
+def command_cd(arg):
+    new_directory = arg
+    if arg == "~":
+        new_directory = os.path.expanduser("~")
     if os.path.isdir(new_directory):
         os.chdir(new_directory)
     else:
@@ -59,10 +65,11 @@ def command_cd(new_directory):
 
 
 builtin_commands_dict = {"exit": command_exit,
-                             "echo": command_echo,
-                             "type": command_type,
-                             "pwd": command_pwd,
-                             "cd": command_cd}
+                         "echo": command_echo,
+                         "type": command_type,
+                         "pwd": command_pwd,
+                         "cd": command_cd}
+
 
 def execute(user_input):
     arg_list = user_input.split()
@@ -76,8 +83,6 @@ def execute(user_input):
 
 
 def main():
-
-
     # Never ending REPL loop
     while True:
         # Print a prompt
