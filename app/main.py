@@ -47,25 +47,26 @@ def main():
 
             arg = match.group(1)
 
-            path_variable = os.getenv("PATH", "")
-            path_list = path_variable.split(os.pathsep)
-
-            for path in path_list:
-                if os.path.isdir(path):
-                    files = [f for f in Path(path).iterdir() if f.is_file()]
-                    for file in files:
-                        if os.access(file, os.X_OK) and file.name == arg:
-                            command_handled = True
-                            output = f"{arg} is {file}"
-                            print(output)
-                            break
-                    if command_handled:
-                        break
+            if arg in builtin_commands_list:
+                command_handled = True
+                output = f"{arg} is a shell builtin"
+                print(output)
 
             if not command_handled:
-                if arg in builtin_commands_list:
-                    output = f"{arg} is a shell builtin"
-                    print(output)
+                path_variable = os.getenv("PATH", "")
+                path_list = path_variable.split(os.pathsep)
+
+                for path in path_list:
+                    if os.path.isdir(path):
+                        files = [f for f in Path(path).iterdir() if f.is_file()]
+                        for file in files:
+                            if os.access(file, os.X_OK) and file.name == arg:
+                                command_handled = True
+                                output = f"{arg} is {file}"
+                                print(output)
+                                break
+                        if command_handled:
+                            break
                 else:
                     output = f"{arg}: not found"
                     print(output)
