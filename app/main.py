@@ -4,6 +4,9 @@ import re
 import os
 from pathlib import Path
 
+builtin_commands_list = ["exit", "echo", "type"]
+
+
 def get_executables(name):
     executables_list = []
 
@@ -18,87 +21,63 @@ def get_executables(name):
                     executables_list.append(file)
     return executables_list
 
+
+def command_exit(arg_string):
+    code = int(arg_string)
+    sys.exit(code)
+
+
+def command_echo(arg_string):
+    arg_list = arg_string.split()
+    arg_list_out = [s.strip() for s in arg_list]
+    arg_string_out = " ".join(arg_list_out)
+    output = f"{arg_string_out}"
+    print(output)
+
+
+def command_type(arg_string):
+    if arg_string in builtin_commands_list:
+        output = f"{arg_string} is a shell builtin"
+        print(output)
+    else:
+        executables_list = get_executables(arg_string)
+        if len(executables_list) > 0:
+            output = f"{arg_string} is {executables_list[0]}"
+            print(output)
+        else:
+            output = f"{arg_string}: not found"
+            print(output)
+
+
+def execute(user_input):
+    arg_list = user_input.split()
+    arg_list_out = [s.strip() for s in arg_list]
+    executables_list = get_executables(arg_list_out[0])
+    if len(executables_list) > 0:
+        subprocess.run(arg_list_out)
+    else:
+        output = f"{user_input}: command not found"
+        print(output)
+
+
 def main():
-    builtin_commands_list = ["exit", "echo", "type"]
+    builtin_commands_dict = {"exit": command_exit, "echo": command_echo, "type": command_type}
 
     # Never ending REPL loop
     while True:
-
-        command_detected = False
-
         # Print a prompt
         sys.stdout.write("$ ")
 
         # Read for user input
         user_input = input()
-
-        # Check for exit command
-        pattern = r"^exit\s+(\d{1})"
-        match = re.search(pattern, user_input)
-        if match:
-            command_detected = True
-            exit_code = int(match.group(1))
-            sys.exit(exit_code)
-
-        # Check for exit command
-        pattern = r"^echo\s+(.+)"
-        match = re.search(pattern, user_input)
-        if match:
-            command_detected = True
-            args_string = match.group(1)
-            args_list = args_string.split()
-            args_list_out = [s.strip() for s in args_list]
-            args_string_out = " ".join(args_list_out)
-            output = f"{args_string_out}"
-            print(output)
-
-        # Check for exit command
-        pattern = r"^type\s+(\w+)"
-        match = re.search(pattern, user_input)
-        if match:
-            command_detected = True
-
-            command_handled = False
-
-            arg = match.group(1)
-
-            if arg in builtin_commands_list:
-                command_handled = True
-                output = f"{arg} is a shell builtin"
-                print(output)
-
-            if not command_handled:
-                executables_list = get_executables(arg)
-                if len(executables_list) > 0:
-                    command_handled = True
-                    output = f"{arg} is {executables_list[0]}"
-                    print(output)
-                else:
-                    output = f"{arg}: not found"
-                    print(output)
-
-        if not command_detected:
-            pattern = r"^(\w+)\s*(.*)"
-            match = re.search(pattern, user_input)
-            if match:
-                arg_name = match.group(1)
-                arg_string = match.group(2)
-                arg_list = arg_string.split()
-                arg_list_out = [s.strip() for s in arg_list]
-                executables_list = get_executables(arg_name)
-
-                if len(executables_list) > 0:
-                    arg_list_out.insert(0, executables_list[0].name)
-                    subprocess.run(arg_list_out)
-                else:
-                    # Format an output
-                    output = f"{user_input}: command not found"
-                    # Print an output
-                    print(output)
+        args_list = user_input.split()
+        if len(args_list) > 0:
+            if args_list[0] in builtin_commands_dict:
+                builtin_commands_dict[args_list[0]](" ".join(args_list[1:]))
+            elif len(get_executables(args_list[0])) > 0:
+                execute(user_input)
             else:
-                # Format an output
                 output = f"{user_input}: command not found"
-                # Print an output
                 print(output)
 
 
