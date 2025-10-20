@@ -50,11 +50,19 @@ def command_pwd(user_input):
     current_directory = os.getcwd()
     print(current_directory)
 
+def command_cd(new_directory):
+    if os.path.isdir(new_directory):
+        os.chdir(new_directory)
+    else:
+        output = f"cd: {new_directory}: No such file or directory"
+        print(output)
+
 
 builtin_commands_dict = {"exit": command_exit,
                              "echo": command_echo,
                              "type": command_type,
-                             "pwd": command_pwd}
+                             "pwd": command_pwd,
+                             "cd": command_cd}
 
 def execute(user_input):
     arg_list = user_input.split()
