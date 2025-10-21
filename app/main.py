@@ -29,11 +29,13 @@ def command_exit(arg_string):
 
 def command_echo(arg_string):
     arg_string = arg_string.replace("\'\'", "")
+    arg_string = arg_string.replace("\"\"", "")
     arg_string = re.sub(r"'\s+'", " ", arg_string)
-    pattern = re.compile(r"'([^']*)'|(\S+)")
+    arg_string = re.sub(r"\"\s+\"", " ", arg_string)
+    pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
     tokens = []
     for m in pattern.finditer(arg_string):
-        val = m.group(1) if m.group(1) is not None else m.group(2)
+        val = m.group(1) if m.group(1) is not None else m.group(2) if m.group(2) is not None else m.group(3)
         tokens.append(val)
     output = " ".join(tokens)
     print(output)
@@ -78,9 +80,13 @@ builtin_commands_dict = {"exit": command_exit,
 
 def execute(command, args):
     arg_list_out = []
-    matches = re.findall(r"'([^']*)'", args)
-    if len(matches) > 0:
-        arg_list_out = matches
+    pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
+    tokens = []
+    for m in pattern.finditer(args):
+        val = m.group(1) if m.group(1) is not None else m.group(2) if m.group(2) is not None else m.group(3)
+        tokens.append(val)
+    if len(tokens) > 0:
+        arg_list_out = tokens
     else:
         arg_list = args.split()
         arg_list_out = [s.strip() for s in arg_list]
