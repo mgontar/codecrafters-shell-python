@@ -27,6 +27,15 @@ def command_exit(arg_string):
     sys.exit(code)
 
 
+TOKEN = re.compile(r"""
+    \s*(
+        '((?:[^'\\]|\\.)*)'          |   # 'single-quoted' with escapes
+        "((?:[^"\\]|\\.)*)"          |   # "double-quoted" with escapes
+        ((?:\\.|[^\s"'\\])+ )            # unquoted token (supports \ )
+    )
+""", re.X)
+
+
 def command_echo(arg_string):
     arg_string = arg_string.replace("\'\'", "")
     arg_string = arg_string.replace("\"\"", "")
@@ -34,9 +43,9 @@ def command_echo(arg_string):
     arg_string = re.sub(r"\"\s+\"", " ", arg_string)
     pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
     tokens = []
-    for m in pattern.finditer(arg_string):
-        val = m.group(1) if m.group(1) is not None else m.group(2) if m.group(2) is not None else m.group(3)
-        tokens.append(val)
+    for m in TOKEN.finditer(arg_string):
+        val = next(g for g in m.groups()[1:] if g is not None)
+        tokens.append(unescape(val))
     output = " ".join(tokens)
     print(output)
 
@@ -78,12 +87,17 @@ builtin_commands_dict = {"exit": command_exit,
                          "cd": command_cd}
 
 
+def unescape(s: str) -> str:
+    # remove backslash escapes: \x -> x
+    return re.sub(r'\\(.)', r'\1', s)
+
+
 def execute(command, args):
     arg_list_out = []
     pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
     tokens = []
     for m in pattern.finditer(args):
-        val = m.group(1) if m.group(1) is not None else m.group(2) if m.group(2) is not None else m.group(3)
+        val = next(g for g in m.groups() if g is not None)
         tokens.append(val)
     if len(tokens) > 0:
         arg_list_out = tokens
