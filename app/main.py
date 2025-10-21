@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import os
+import re
 from pathlib import Path
 
 builtin_commands_dict = {}
@@ -27,10 +28,14 @@ def command_exit(arg_string):
 
 
 def command_echo(arg_string):
-    arg_list = arg_string.split()
-    arg_list_out = [s.strip() for s in arg_list]
-    arg_string_out = " ".join(arg_list_out)
-    output = f"{arg_string_out}"
+    arg_string = arg_string.replace("\'\'", "")
+    arg_string = re.sub(r"'\s+'", " ", arg_string)
+    pattern = re.compile(r"'([^']*)'|(\S+)")
+    tokens = []
+    for m in pattern.finditer(arg_string):
+        val = m.group(1) if m.group(1) is not None else m.group(2)
+        tokens.append(val)
+    output = " ".join(tokens)
     print(output)
 
 
@@ -71,14 +76,20 @@ builtin_commands_dict = {"exit": command_exit,
                          "cd": command_cd}
 
 
-def execute(user_input):
-    arg_list = user_input.split()
-    arg_list_out = [s.strip() for s in arg_list]
-    executables_list = get_executables(arg_list_out[0])
+def execute(command, args):
+    arg_list_out = []
+    matches = re.findall(r"'([^']*)'", args)
+    if len(matches) > 0:
+        arg_list_out = matches
+    else:
+        arg_list = args.split()
+        arg_list_out = [s.strip() for s in arg_list]
+    executables_list = get_executables(command)
     if len(executables_list) > 0:
+        arg_list_out.insert(0, command)
         subprocess.run(arg_list_out)
     else:
-        output = f"{user_input}: command not found"
+        output = f"{command} {args}: command not found"
         print(output)
 
 
@@ -90,12 +101,20 @@ def main():
 
         # Read for user input
         user_input = input()
-        args_list = user_input.split()
-        if len(args_list) > 0:
-            if args_list[0] in builtin_commands_dict:
-                builtin_commands_dict[args_list[0]](" ".join(args_list[1:]))
-            elif len(get_executables(args_list[0])) > 0:
-                execute(user_input)
+
+        idx = user_input.find(" ")
+        if idx == -1:
+            command = user_input.strip()
+            args = ""
+        else:
+            command = user_input[:idx].strip()
+            args = user_input[idx + 1:].strip()
+
+        if command:
+            if command in builtin_commands_dict:
+                builtin_commands_dict[command](args)
+            elif len(get_executables(command)) > 0:
+                execute(command, args)
             else:
                 output = f"{user_input}: command not found"
                 print(output)
