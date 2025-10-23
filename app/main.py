@@ -27,25 +27,35 @@ def command_exit(arg_string):
     sys.exit(code)
 
 
-TOKEN = re.compile(r"""
-    \s*(
-        '((?:[^'\\]|\\.)*)'          |   # 'single-quoted' with escapes
-        "((?:[^"\\]|\\.)*)"          |   # "double-quoted" with escapes
-        ((?:\\.|[^\s"'\\])+ )            # unquoted token (supports \ )
-    )
-""", re.X)
+def unescape(s):
+    """Unescape sequences inside double quotes."""
+    return bytes(s, "utf-8").decode("unicode_escape")
 
 
 def command_echo(arg_string):
-    arg_string = arg_string.replace("\'\'", "")
-    arg_string = arg_string.replace("\"\"", "")
+    arg_string = arg_string.replace("''", "")
+    arg_string = arg_string.replace('""', "")
     arg_string = re.sub(r"'\s+'", " ", arg_string)
-    arg_string = re.sub(r"\"\s+\"", " ", arg_string)
-    pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
+    arg_string = re.sub(r'"\s+"', " ", arg_string)
+
+    pattern = re.compile(r"""
+        \s*(
+            '([^']*)'                        |   # single-quoted literal
+            "((?:[^"\\]|\\.)*)"              |   # double-quoted with escapes
+            ((?:\\.|[^\s"'\\])+ )                # unquoted token
+        )
+    """, re.X)
+
     tokens = []
-    for m in TOKEN.finditer(arg_string):
-        val = next(g for g in m.groups()[1:] if g is not None)
-        tokens.append(unescape(val))
+    for m in pattern.finditer(arg_string):
+        single, double, unquoted = m.group(2), m.group(3), m.group(4)
+        if single is not None:
+            val = single  # treat literally
+        elif double is not None:
+            val = unescape(double)
+        else:
+            val = unescape(unquoted)
+        tokens.append(val)
     output = " ".join(tokens)
     print(output)
 
