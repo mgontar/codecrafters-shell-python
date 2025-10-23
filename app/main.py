@@ -12,7 +12,6 @@ def get_executables(name):
 
     path_variable = os.getenv("PATH", "")
     path_list = path_variable.split(os.pathsep)
-
     for path in path_list:
         if os.path.isdir(path):
             files = [f for f in Path(path).iterdir() if f.is_file()]
@@ -134,11 +133,6 @@ builtin_commands_dict = {"exit": command_exit,
                          "cd": command_cd}
 
 
-def unescape(s: str) -> str:
-    # remove backslash escapes: \x -> x
-    return re.sub(r'\\(.)', r'\1', s)
-
-
 def execute(command, args):
     arg_list_out = []
     pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
@@ -161,6 +155,7 @@ def execute(command, args):
 
 
 def main():
+    # print(os.environ["PATH"])
     # Never ending REPL loop
     while True:
         # Print a prompt
@@ -168,14 +163,25 @@ def main():
 
         # Read for user input
         user_input = input()
-
-        idx = user_input.find(" ")
-        if idx == -1:
-            command = user_input.strip()
-            args = ""
+        command = ""
+        args = ""
+        pattern = r"(?:(?:'(.+)')|(?:\"(.+)\")|(\S+))(?:\s+(.+))?"
+        match = re.search(pattern, user_input)
+        if match:
+            cmd_sq = match.group(1)
+            cmd_dq = match.group(2)
+            cmd_nq = match.group(3)
+            command = cmd_nq if cmd_nq is not None else cmd_sq if cmd_sq is not None else cmd_dq
+            args = match.group(4)
+            args = args if args is not None else ""
         else:
-            command = user_input[:idx].strip()
-            args = user_input[idx + 1:].strip()
+            idx = user_input.find(" ")
+            if idx == -1:
+                command = user_input.strip()
+                args = ""
+            else:
+                command = user_input[:idx].strip()
+                args = user_input[idx + 1:].strip()
 
         if command:
             if command in builtin_commands_dict:
