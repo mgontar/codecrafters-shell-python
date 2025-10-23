@@ -27,36 +27,73 @@ def command_exit(arg_string):
     sys.exit(code)
 
 
-def unescape(s):
-    """Unescape sequences inside double quotes."""
-    return bytes(s, "utf-8").decode("unicode_escape")
+def unescape_double(s):
+    out = []
+    i = 0
+    while i < len(s):
+        ch = s[i]
+        if ch == '\\' and i + 1 < len(s):
+            nxt = s[i + 1]
+            if nxt in ['"', '\\', '$', '`']:
+                out.append(nxt)
+                i += 2
+                continue
+            elif nxt == '\n':  # line continuation
+                i += 2
+                continue
+        out.append(ch)
+        i += 1
+    return ''.join(out)
+
+
+def unescape_unquoted(s):
+    out = []
+    i = 0
+    while i < len(s):
+        if s[i] == '\\' and i + 1 < len(s):
+            out.append(s[i + 1])
+            i += 2
+        else:
+            out.append(s[i])
+            i += 1
+    return ''.join(out)
 
 
 def command_echo(arg_string):
+    # Keep your normalizations
     arg_string = arg_string.replace("''", "")
     arg_string = arg_string.replace('""', "")
     arg_string = re.sub(r"'\s+'", " ", arg_string)
     arg_string = re.sub(r'"\s+"', " ", arg_string)
 
+    # Capture any leading whitespace *per token* as group(1)
     pattern = re.compile(r"""
-        \s*(
-            '([^']*)'                        |   # single-quoted literal
-            "((?:[^"\\]|\\.)*)"              |   # double-quoted with escapes
-            ((?:\\.|[^\s"'\\])+ )                # unquoted token
+        (\s*)(
+            '([^']*)'                    |   # single-quoted literal
+            "((?:[^"\\]|\\.)*)"          |   # double-quoted with limited escapes
+            ((?:\\.|[^\s"'\\])+)
         )
     """, re.X)
 
-    tokens = []
+    pieces = []
     for m in pattern.finditer(arg_string):
-        single, double, unquoted = m.group(2), m.group(3), m.group(4)
+        had_ws = bool(m.group(1))
+        single = m.group(3)
+        dbl = m.group(4)
+        unq = m.group(5)
+
         if single is not None:
-            val = single  # treat literally
-        elif double is not None:
-            val = unescape(double)
+            val = single
+        elif dbl is not None:
+            val = unescape_double(dbl)
         else:
-            val = unescape(unquoted)
-        tokens.append(val)
-    output = " ".join(tokens)
+            val = unescape_unquoted(unq)
+
+        if had_ws and pieces:
+            pieces.append(' ')  # only add a space if there *was* whitespace
+        pieces.append(val)
+
+    output = ''.join(pieces)
     print(output)
 
 
