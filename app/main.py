@@ -133,7 +133,7 @@ builtin_commands_dict = {"exit": command_exit,
                          "cd": command_cd}
 
 
-def execute(command, args, stdout_file):
+def execute(command, args, stdout_file, stderr_file):
     arg_list_out = []
     pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
     tokens = []
@@ -148,10 +148,16 @@ def execute(command, args, stdout_file):
     executables_list = get_executables(command)
     if len(executables_list) > 0:
         arg_list_out.insert(0, command)
-        if stdout_file is None:
+        if stdout_file is None and stderr_file is None:
             subprocess.run(arg_list_out)
         else:
-            subprocess.run(arg_list_out, stdout=stdout_file)
+            if stderr_file is None:
+                subprocess.run(arg_list_out, stdout=stdout_file)
+            else:
+                if stdout_file is None:
+                    subprocess.run(arg_list_out, stderr=stderr_file)
+                else:
+                    subprocess.run(arg_list_out, stdout=stdout_file, stderr=stderr_file)
     else:
         output = f"{command} {args}: command not found"
         print(output)
@@ -188,28 +194,42 @@ def main():
 
         # Process output redirection
         old_stdout = sys.stdout
-        out_file = None
-        pattern = r"(.+)(?:(?:\s+1>\s+)|(?:\s+>\s+))(.+)"
+        stdout_file = None
+        old_stderr = sys.stderr
+        stderr_file = None
+
+        pattern = r"(.+)(?:\s+2>\s+)(.+)"
         match = re.search(pattern, args)
         if match:
             args = match.group(1)
-            redirect_path = match.group(2)
+            stderr_file_path = match.group(2)
             #print(f'{args}')
-            #print(f'{redirect_path}')
-            out_file = open(redirect_path, 'w')
-            sys.stdout = out_file
+            #print(f'{stderr_file_path}')
+            stderr_file = open(stderr_file_path, 'w')
+            sys.stderr = stderr_file
+
+        pattern = r"(.+)(?:\s+1?>\s+)(.+)"
+        match = re.search(pattern, args)
+        if match:
+            args = match.group(1)
+            stdout_file_path = match.group(2)
+            #print(f'{args}')
+            #print(f'{stdout_file_path}')
+            stdout_file = open(stdout_file_path, 'w')
+            sys.stdout = stdout_file
 
         if command:
             if command in builtin_commands_dict:
                 builtin_commands_dict[command](args)
             elif len(get_executables(command)) > 0:
-                execute(command, args, out_file)
+                execute(command, args, stdout_file, stderr_file)
             else:
                 output = f"{user_input}: command not found"
                 print(output)
 
         # Restore output
         sys.stdout = old_stdout
+        sys.stderr = old_stderr
 
 
 if __name__ == "__main__":
