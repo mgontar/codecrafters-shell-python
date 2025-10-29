@@ -208,14 +208,18 @@ def main():
             stderr_file = open(stderr_file_path, 'w')
             sys.stderr = stderr_file
 
-        pattern = r"(.+)(?:\s+1?>\s+)(.+)"
+        pattern = r"(.+)(?:\s+)(1?>>?)(?:\s+)(.+)"
         match = re.search(pattern, args)
         if match:
             args = match.group(1)
-            stdout_file_path = match.group(2)
-            #print(f'{args}')
-            #print(f'{stdout_file_path}')
-            stdout_file = open(stdout_file_path, 'w')
+            operator = match.group(2)
+            stdout_file_path = match.group(3)
+
+            open_flag = 'w+'
+            if operator == '1>>' or operator == '>>':
+                open_flag = 'a+'
+
+            stdout_file = open(stdout_file_path, open_flag)
             sys.stdout = stdout_file
 
         if command:
