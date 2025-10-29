@@ -198,14 +198,18 @@ def main():
         old_stderr = sys.stderr
         stderr_file = None
 
-        pattern = r"(.+)(?:\s+2>\s+)(.+)"
+        pattern = r"(.+)(?:\s+)(2>>?)(?:\s+)(.+)"
         match = re.search(pattern, args)
         if match:
             args = match.group(1)
-            stderr_file_path = match.group(2)
-            #print(f'{args}')
-            #print(f'{stderr_file_path}')
-            stderr_file = open(stderr_file_path, 'w')
+            operator = match.group(2)
+            stderr_file_path = match.group(3)
+
+            open_flag = 'w+'
+            if operator == '2>>':
+                open_flag = 'a+'
+
+            stderr_file = open(stderr_file_path, open_flag)
             sys.stderr = stderr_file
 
         pattern = r"(.+)(?:\s+)(1?>>?)(?:\s+)(.+)"
