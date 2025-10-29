@@ -3,8 +3,30 @@ import sys
 import os
 import re
 from pathlib import Path
+import readline
 
 builtin_commands_dict = {}
+
+
+class CommandCompleter(object):  # Custom completer
+
+    def __init__(self, options):
+        self.matches = None
+        self.options = sorted(options)
+        return
+
+    def complete(self, text, state):
+        if state == 0:  # on first trigger, build possible matches
+            if not text:
+                self.matches = self.options[:]
+            else:
+                self.matches = [s for s in self.options
+                                if s and s.startswith(text)]
+        # return match indexed by state
+        try:
+            return self.matches[state] + " "
+        except IndexError:
+            return None
 
 
 def get_executables(name):
@@ -22,7 +44,9 @@ def get_executables(name):
 
 
 def command_exit(arg_string):
-    code = int(arg_string)
+    code = 0
+    if arg_string:
+        code = int(arg_string)
     sys.exit(code)
 
 
@@ -164,7 +188,32 @@ def execute(command, args, stdout_file, stderr_file):
 
 
 def main():
-    # print(os.environ["PATH"])
+
+    # Builtin commands completion
+    completer = CommandCompleter(list(builtin_commands_dict))
+    readline.set_completer(completer.complete)
+    doc = (readline.__doc__ or "")
+    if "libedit" in doc:
+        # macOS default backend
+        readline.parse_and_bind("bind -e")                   # emacs mode
+        readline.parse_and_bind("bind ^I rl_complete")       # Tab completes
+        # Treat control backspace keys as literal inserts, not editing
+        readline.parse_and_bind("bind ^H ed-insert")         # ^H (0x08)
+        readline.parse_and_bind("bind ^? ed-insert")         # DEL (0x7f)
+        # If you want to be extra defensive for other control chars:
+        # readline.parse_and_bind("bind \\b ed-insert")      # alt syntax
+    else:
+        # GNU readline
+        readline.parse_and_bind("set editing-mode emacs")
+        readline.parse_and_bind("tab: complete")
+        # Don't interpret TTY specials as editing commands
+        readline.parse_and_bind("set bind-tty-special-chars off")
+        # Ensure ^H and DEL are inserted literally
+        readline.parse_and_bind('"\\C-h": self-insert')      # ^H (0x08)
+        readline.parse_and_bind('"\\C-?": self-insert')      # DEL (0x7f)
+        # (Optional) case-insensitive completion, etc.
+        # readline.parse_and_bind("set completion-ignore-case on")
+
     # Never ending REPL loop
     while True:
         # Print a prompt
