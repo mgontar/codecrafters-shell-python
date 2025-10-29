@@ -199,7 +199,7 @@ def main():
         readline.parse_and_bind("bind ^I rl_complete")       # Tab completes
         # Treat control backspace keys as literal inserts, not editing
         readline.parse_and_bind("bind ^H ed-insert")         # ^H (0x08)
-        readline.parse_and_bind("bind ^? ed-insert")         # DEL (0x7f)
+        #readline.parse_and_bind("bind ^? ed-insert")         # DEL (0x7f)
         # If you want to be extra defensive for other control chars:
         # readline.parse_and_bind("bind \\b ed-insert")      # alt syntax
     else:
@@ -210,7 +210,7 @@ def main():
         readline.parse_and_bind("set bind-tty-special-chars off")
         # Ensure ^H and DEL are inserted literally
         readline.parse_and_bind('"\\C-h": self-insert')      # ^H (0x08)
-        readline.parse_and_bind('"\\C-?": self-insert')      # DEL (0x7f)
+        #readline.parse_and_bind('"\\C-?": self-insert')      # DEL (0x7f)
         # (Optional) case-insensitive completion, etc.
         # readline.parse_and_bind("set completion-ignore-case on")
 
