@@ -43,6 +43,20 @@ def get_executables(name):
     return executables_list
 
 
+def get_all_executables():
+    executables_list = []
+
+    path_variable = os.getenv("PATH", "")
+    path_list = path_variable.split(os.pathsep)
+    for path in path_list:
+        if os.path.isdir(path):
+            files = [f for f in Path(path).iterdir() if f.is_file()]
+            for file in files:
+                if os.access(file, os.X_OK):
+                    executables_list.append(file.name)
+    return executables_list
+
+
 def command_exit(arg_string):
     code = 0
     if arg_string:
@@ -188,18 +202,17 @@ def execute(command, args, stdout_file, stderr_file):
 
 
 def main():
-
     # Builtin commands completion
-    completer = CommandCompleter(list(builtin_commands_dict))
+    completer = CommandCompleter(list(builtin_commands_dict) + get_all_executables())
     readline.set_completer(completer.complete)
     doc = (readline.__doc__ or "")
     if "libedit" in doc:
         # macOS default backend
-        readline.parse_and_bind("bind -e")                   # emacs mode
-        readline.parse_and_bind("bind ^I rl_complete")       # Tab completes
+        readline.parse_and_bind("bind -e")  # emacs mode
+        readline.parse_and_bind("bind ^I rl_complete")  # Tab completes
         # Treat control backspace keys as literal inserts, not editing
-        readline.parse_and_bind("bind ^H ed-insert")         # ^H (0x08)
-        #readline.parse_and_bind("bind ^? ed-insert")         # DEL (0x7f)
+        readline.parse_and_bind("bind ^H ed-insert")  # ^H (0x08)
+        # readline.parse_and_bind("bind ^? ed-insert")         # DEL (0x7f)
         # If you want to be extra defensive for other control chars:
         # readline.parse_and_bind("bind \\b ed-insert")      # alt syntax
     else:
@@ -209,8 +222,8 @@ def main():
         # Don't interpret TTY specials as editing commands
         readline.parse_and_bind("set bind-tty-special-chars off")
         # Ensure ^H and DEL are inserted literally
-        readline.parse_and_bind('"\\C-h": self-insert')      # ^H (0x08)
-        #readline.parse_and_bind('"\\C-?": self-insert')      # DEL (0x7f)
+        readline.parse_and_bind('"\\C-h": self-insert')  # ^H (0x08)
+        # readline.parse_and_bind('"\\C-?": self-insert')      # DEL (0x7f)
         # (Optional) case-insensitive completion, etc.
         # readline.parse_and_bind("set completion-ignore-case on")
 
