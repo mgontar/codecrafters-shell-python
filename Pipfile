@@ -6,6 +6,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+gnureadline = { version = "*", markers = "sys_platform == 'darwin'" }
 
 [dev-packages]
 

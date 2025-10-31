@@ -3,7 +3,10 @@ import sys
 import os
 import re
 from pathlib import Path
-import readline
+try:
+    import gnureadline as readline
+except ImportError:
+    import readline
 
 builtin_commands_dict = {}
 
@@ -27,6 +30,18 @@ class CommandCompleter(object):  # Custom completer
             return self.matches[state] + " "
         except IndexError:
             return None
+
+
+def display_matches(substitution, matches, longest_match_length):
+    # Some readline builds include the substitution again in matches; guard just in case
+    items = [m for m in matches if m != substitution]
+    line = " ".join(items)  # <-- exactly two spaces
+    sys.stdout.write("\n" + line + "\n")
+
+    # Redraw your prompt and current buffer
+    buf = readline.get_line_buffer()
+    sys.stdout.write("$ " + buf)
+    sys.stdout.flush()
 
 
 def get_executables(name):
@@ -205,6 +220,7 @@ def main():
     # Builtin commands completion
     completer = CommandCompleter(list(builtin_commands_dict) + get_all_executables())
     readline.set_completer(completer.complete)
+    readline.set_completion_display_matches_hook(display_matches)
     doc = (readline.__doc__ or "")
     if "libedit" in doc:
         # macOS default backend
