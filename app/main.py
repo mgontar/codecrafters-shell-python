@@ -187,33 +187,52 @@ builtin_commands_dict = {"exit": command_exit,
 
 
 def execute(command, args, stdout_file, stderr_file):
-    arg_list_out = []
-    pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
-    tokens = []
-    for m in pattern.finditer(args):
-        val = next(g for g in m.groups() if g is not None)
-        tokens.append(val)
-    if len(tokens) > 0:
-        arg_list_out = tokens
+
+    if " | " in args:
+        args_parts = args.split(" | ")
+        arg_list_1 = args_parts[0].split()
+        arg_list_out_1 = [s.strip() for s in arg_list_1]
+        arg_list_2 = args_parts[1].split()
+        arg_list_out_2 = [s.strip() for s in arg_list_2]
+
+        arg_list_out_1.insert(0, command)
+        # Run "ls -l | grep py"
+        p1 = subprocess.Popen(arg_list_out_1, stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(arg_list_out_2, stdin=p1.stdout)
+
+        # Allow p1 to receive SIGPIPE if p2 exits
+        p1.stdout.close()
+
+        p2.communicate()
     else:
-        arg_list = args.split()
-        arg_list_out = [s.strip() for s in arg_list]
-    executables_list = get_executables(command)
-    if len(executables_list) > 0:
-        arg_list_out.insert(0, command)
-        if stdout_file is None and stderr_file is None:
-            subprocess.run(arg_list_out)
+
+        arg_list_out = []
+        pattern = re.compile(r"'([^']*)'|\"([^\"]*)\"|(\S+)")
+        tokens = []
+        for m in pattern.finditer(args):
+            val = next(g for g in m.groups() if g is not None)
+            tokens.append(val)
+        if len(tokens) > 0:
+            arg_list_out = tokens
         else:
-            if stderr_file is None:
-                subprocess.run(arg_list_out, stdout=stdout_file)
+            arg_list = args.split()
+            arg_list_out = [s.strip() for s in arg_list]
+        executables_list = get_executables(command)
+        if len(executables_list) > 0:
+            arg_list_out.insert(0, command)
+            if stdout_file is None and stderr_file is None:
+                subprocess.run(arg_list_out)
             else:
-                if stdout_file is None:
-                    subprocess.run(arg_list_out, stderr=stderr_file)
+                if stderr_file is None:
+                    subprocess.run(arg_list_out, stdout=stdout_file)
                 else:
-                    subprocess.run(arg_list_out, stdout=stdout_file, stderr=stderr_file)
-    else:
-        output = f"{command} {args}: command not found"
-        print(output)
+                    if stdout_file is None:
+                        subprocess.run(arg_list_out, stderr=stderr_file)
+                    else:
+                        subprocess.run(arg_list_out, stdout=stdout_file, stderr=stderr_file)
+        else:
+            output = f"{command} {args}: command not found"
+            print(output)
 
 
 def main():
